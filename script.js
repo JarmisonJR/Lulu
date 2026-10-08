@@ -5,14 +5,14 @@ import {
 
 // ⚠️ SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE CONSOLE ⚠️
 const firebaseConfig = {
-    apiKey: "AIzaSyAB8cfZQ42O5raGqCSO61P51D87ejRumf4",
-    authDomain: "lulu-94121.firebaseapp.com",
-    projectId: "lulu-94121",
-    storageBucket: "lulu-94121.firebasestorage.app",
-    messagingSenderId: "306455304159",
-    appId: "1:306455304159:web:cc002dbda35c9538e8966a",
-    measurementId: "G-7WEL3F30CP"
-  };
+  apiKey: "AIzaSyAB8cfZQ42O5raGqCSO61P51D87ejRumf4",
+  authDomain: "lulu-94121.firebaseapp.com",
+  projectId: "lulu-94121",
+  storageBucket: "lulu-94121.firebasestorage.app",
+  messagingSenderId: "306455304159",
+  appId: "1:306455304159:web:cc002dbda35c9538e8966a",
+  measurementId: "G-7WEL3F30CP"
+};
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
