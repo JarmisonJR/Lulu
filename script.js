@@ -1,14 +1,37 @@
-// ==========================================
-// 1. CRONÔMETRO COM DATA FIXA (Persistente)
-// ==========================================
-let savedStartDate = localStorage.getItem("couple_start_date");
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+import { 
+  getFirestore, doc, getDoc, setDoc, collection, onSnapshot, addDoc, updateDoc, deleteDoc 
+} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-if (!savedStartDate) {
-  savedStartDate = new Date().toISOString();
-  localStorage.setItem("couple_start_date", savedStartDate);
-}
+// ⚠️ SUBSTITUA PELAS SUAS CONFIGURAÇÕES DO FIREBASE CONSOLE ⚠️
+const firebaseConfig = {
+    apiKey: "AIzaSyAB8cfZQ42O5raGqCSO61P51D87ejRumf4",
+    authDomain: "lulu-94121.firebaseapp.com",
+    projectId: "lulu-94121",
+    storageBucket: "lulu-94121.firebasestorage.app",
+    messagingSenderId: "306455304159",
+    appId: "1:306455304159:web:cc002dbda35c9538e8966a",
+    measurementId: "G-7WEL3F30CP"
+  };
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
 
-let startDate = new Date(savedStartDate);
+// ==========================================
+// 1. CRONÔMETRO DE TEMPO (Sincronizado no Firestore)
+// ==========================================
+let startDate = new Date();
+const configRef = doc(db, "settings", "general");
+
+// Escuta em tempo real a data salva no banco
+onSnapshot(configRef, (docSnap) => {
+  if (docSnap.exists() && docSnap.data().startDate) {
+    startDate = new Date(docSnap.data().startDate);
+  } else {
+    // Se não existir no banco, cria com a data atual
+    setDoc(configRef, { startDate: startDate.toISOString() });
+  }
+  updateCounter();
+});
 
 function updateCounter() {
   const now = new Date();
@@ -34,186 +57,137 @@ function updateCounter() {
 }
 
 setInterval(updateCounter, 1000);
-updateCounter();
 
-function openDateModal() {
+window.openDateModal = () => {
   const formatted = startDate.toISOString().slice(0, 16);
   document.getElementById("start-date-input").value = formatted;
   document.getElementById("date-modal").classList.remove("hidden");
-}
+};
 
-function closeDateModal() {
+window.closeDateModal = () => {
   document.getElementById("date-modal").classList.add("hidden");
-}
+};
 
-function saveStartDate(e) {
+window.saveStartDate = async (e) => {
   e.preventDefault();
   const inputVal = document.getElementById("start-date-input").value;
   if (inputVal) {
-    startDate = new Date(inputVal);
-    localStorage.setItem("couple_start_date", startDate.toISOString());
-    updateCounter();
-    closeDateModal();
+    const newDate = new Date(inputVal).toISOString();
+    await setDoc(configRef, { startDate: newDate }, { merge: true });
+    window.closeDateModal();
   }
-}
+};
 
 // ==========================================
-// 2. MURAL DE FOTOS (GALERIA)
+// 2. MURAL DE FOTOS (Sincronizado no Firestore)
 // ==========================================
-const defaultPhotos = [
-  {
-    id: 1,
-    url: "https://images.unsplash.com/photo-1518199266791-5375a83190b7?w=500&q=80",
-    caption: "Nosso dia especial ❤️"
-  },
-  {
-    id: 2,
-    url: "https://images.unsplash.com/photo-1522673607200-164d1b6ce486?w=500&q=80",
-    caption: "Sorrisos inesquecíveis ✨"
-  }
-];
+const photosRef = collection(db, "photos");
 
-let photos = JSON.parse(localStorage.getItem("couple_photos")) || defaultPhotos;
-
-function savePhotosToStorage() {
-  localStorage.setItem("couple_photos", JSON.stringify(photos));
-  renderPhotos();
-}
-
-function renderPhotos() {
+onSnapshot(photosRef, (snapshot) => {
   const container = document.getElementById("photo-grid");
   if (!container) return;
-
   container.innerHTML = "";
 
-  if (photos.length === 0) {
-    container.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma foto no mural ainda. Clique em "+ Adicionar Foto" para começar!</p>`;
+  if (snapshot.empty) {
+    container.innerHTML = `<p style="grid-column: 1 / -1; text-align: center; color: var(--text-muted); padding: 20px;">Nenhuma foto no mural ainda.</p>`;
     return;
   }
 
-  photos.forEach((photo) => {
+  snapshot.forEach((docSnap) => {
+    const photo = docSnap.data();
+    const id = docSnap.id;
+
     const card = document.createElement("div");
     card.className = "photo-card";
-
     card.innerHTML = `
-      <img src="${photo.url}" class="photo-thumb" onclick="viewPhoto('${photo.url}', '${photo.caption}')" alt="Foto">
+      <img src="${photo.url}" class="photo-thumb" onclick="viewPhoto('${photo.url}', '${photo.caption || ''}')" alt="Foto">
       <div class="photo-caption">
         <span>${photo.caption || "Sem legenda"}</span>
-        <button class="photo-delete-btn" onclick="deletePhoto(${photo.id})" title="Excluir">🗑️</button>
+        <button class="photo-delete-btn" onclick="deletePhoto('${id}')" title="Excluir">🗑️</button>
       </div>
     `;
-
     container.appendChild(card);
   });
-}
+});
 
-function openPhotoModal() {
-  document.getElementById("add-photo-modal").classList.remove("hidden");
-}
-
-function closePhotoModal() {
+window.openPhotoModal = () => document.getElementById("add-photo-modal").classList.remove("hidden");
+window.closePhotoModal = () => {
   document.getElementById("add-photo-modal").classList.add("hidden");
   document.getElementById("photo-url").value = "";
   document.getElementById("photo-caption").value = "";
-}
+};
 
-function savePhoto(e) {
+window.savePhoto = async (e) => {
   e.preventDefault();
   const url = document.getElementById("photo-url").value.trim();
   const caption = document.getElementById("photo-caption").value.trim();
 
   if (url) {
-    const newPhoto = {
-      id: Date.now(),
-      url,
-      caption
-    };
-    photos.unshift(newPhoto);
-    savePhotosToStorage();
-    closePhotoModal();
+    await addDoc(photosRef, { url, caption, createdAt: Date.now() });
+    window.closePhotoModal();
   }
-}
+};
 
-function deletePhoto(id) {
-  if (confirm("Tem certeza que deseja excluir esta foto do mural?")) {
-    photos = photos.filter(p => p.id !== id);
-    savePhotosToStorage();
+window.deletePhoto = async (id) => {
+  if (confirm("Deseja excluir esta foto?")) {
+    await deleteDoc(doc(db, "photos", id));
   }
-}
+};
 
-function viewPhoto(url, caption) {
+window.viewPhoto = (url, caption) => {
   document.getElementById("view-photo-img").src = url;
   document.getElementById("view-photo-caption").innerText = caption;
   document.getElementById("view-photo-modal").classList.remove("hidden");
-}
+};
 
-function closeViewPhotoModal() {
-  document.getElementById("view-photo-modal").classList.add("hidden");
-}
-
-renderPhotos();
+window.closeViewPhotoModal = () => document.getElementById("view-photo-modal").classList.add("hidden");
 
 // ==========================================
-// 3. CARTA ESPECIAL PERSONALIZADA
+// 3. CARTA PERSONALIZADA (Firestore)
 // ==========================================
-const defaultCustomLetter = "Meu amor,\n\nEscrevi esta carta para te lembrar do quanto você é especial para mim. Cada momento ao seu lado torna a vida mais bonita e alegre.\n\nCom todo o meu amor!";
+const letterDocRef = doc(db, "letters", "special");
 
-let customLetter = localStorage.getItem("couple_custom_letter") || defaultCustomLetter;
+onSnapshot(letterDocRef, (docSnap) => {
+  if (docSnap.exists()) {
+    document.getElementById("custom-letter-preview").innerText = docSnap.data().text;
+  } else {
+    document.getElementById("custom-letter-preview").innerText = "Escreva uma carta especial para ele ler aqui!";
+  }
+});
 
-function renderCustomLetter() {
-  document.getElementById("custom-letter-preview").innerText = customLetter;
-}
-
-function openCustomLetterModal() {
-  document.getElementById("custom-letter-input").value = customLetter;
+window.openCustomLetterModal = async () => {
+  const docSnap = await getDoc(letterDocRef);
+  if (docSnap.exists()) {
+    document.getElementById("custom-letter-input").value = docSnap.data().text;
+  }
   document.getElementById("custom-letter-modal").classList.remove("hidden");
-}
+};
 
-function closeCustomLetterModal() {
-  document.getElementById("custom-letter-modal").classList.add("hidden");
-}
+window.closeCustomLetterModal = () => document.getElementById("custom-letter-modal").classList.add("hidden");
 
-function saveCustomLetter(e) {
+window.saveCustomLetter = async (e) => {
   e.preventDefault();
   const text = document.getElementById("custom-letter-input").value;
-  customLetter = text;
-  localStorage.setItem("couple_custom_letter", text);
-  renderCustomLetter();
-  closeCustomLetterModal();
-}
-
-renderCustomLetter();
+  await setDoc(letterDocRef, { text, updatedAt: Date.now() });
+  window.closeCustomLetterModal();
+};
 
 // ==========================================
-// 4. GERENCIAMENTO DOS MARCOS (CRUD)
+// 4. NOSSOS MARCOS / TIMELINE (Firestore)
 // ==========================================
-const defaultMilestones = [
-  {
-    id: 1,
-    date: "Hoje",
-    title: "O Início da Nossa Nova Fase",
-    desc: "Começamos a contar oficialmente o nosso tempo!",
-    img: ""
-  }
-];
+const milestonesRef = collection(db, "milestones");
 
-let milestones = JSON.parse(localStorage.getItem("couple_milestones")) || defaultMilestones;
-
-function saveMilestonesToStorage() {
-  localStorage.setItem("couple_milestones", JSON.stringify(milestones));
-  renderMilestones();
-}
-
-function renderMilestones() {
+onSnapshot(milestonesRef, (snapshot) => {
   const container = document.getElementById("timeline-list");
   if (!container) return;
-
   container.innerHTML = "";
 
-  milestones.forEach((item) => {
+  snapshot.forEach((docSnap) => {
+    const item = docSnap.data();
+    const id = docSnap.id;
+
     const itemEl = document.createElement("div");
     itemEl.className = "timeline-item";
-    
     const imgHtml = item.img ? `<img src="${item.img}" class="timeline-img" alt="Foto">` : '';
 
     itemEl.innerHTML = `
@@ -222,8 +196,8 @@ function renderMilestones() {
         <div class="timeline-header">
           <span class="date">${item.date}</span>
           <div class="timeline-actions">
-            <button class="btn-icon" onclick="editMilestone(${item.id})" title="Editar">✏️</button>
-            <button class="btn-icon" onclick="deleteMilestone(${item.id})" title="Excluir">🗑️</button>
+            <button class="btn-icon" onclick="editMilestone('${id}', '${item.date}', '${item.title}', '${item.desc}', '${item.img || ''}')">✏️</button>
+            <button class="btn-icon" onclick="deleteMilestone('${id}')">🗑️</button>
           </div>
         </div>
         <h3>${item.title}</h3>
@@ -231,25 +205,19 @@ function renderMilestones() {
         ${imgHtml}
       </div>
     `;
-
     container.appendChild(itemEl);
   });
-}
+});
 
-function openMilestoneModal(isEdit = false) {
-  document.getElementById("milestone-modal-title").innerText = isEdit ? "Editar Marco" : "Novo Marco";
-  document.getElementById("milestone-modal").classList.remove("hidden");
-}
-
-function closeMilestoneModal() {
+window.openMilestoneModal = () => document.getElementById("milestone-modal").classList.remove("hidden");
+window.closeMilestoneModal = () => {
   document.getElementById("milestone-modal").classList.add("hidden");
   document.getElementById("milestone-form").reset();
   document.getElementById("milestone-id").value = "";
-}
+};
 
-function saveMilestone(e) {
+window.saveMilestone = async (e) => {
   e.preventDefault();
-  
   const id = document.getElementById("milestone-id").value;
   const date = document.getElementById("milestone-date").value;
   const title = document.getElementById("milestone-title").value;
@@ -257,180 +225,99 @@ function saveMilestone(e) {
   const img = document.getElementById("milestone-img").value;
 
   if (id) {
-    const index = milestones.findIndex(m => m.id == id);
-    if (index !== -1) {
-      milestones[index] = { id: Number(id), date, title, desc, img };
-    }
+    await updateDoc(doc(db, "milestones", id), { date, title, desc, img });
   } else {
-    const newMilestone = {
-      id: Date.now(),
-      date,
-      title,
-      desc,
-      img
-    };
-    milestones.unshift(newMilestone);
+    await addDoc(milestonesRef, { date, title, desc, img, createdAt: Date.now() });
   }
+  window.closeMilestoneModal();
+};
 
-  saveMilestonesToStorage();
-  closeMilestoneModal();
-}
+window.editMilestone = (id, date, title, desc, img) => {
+  document.getElementById("milestone-id").value = id;
+  document.getElementById("milestone-date").value = date;
+  document.getElementById("milestone-title").value = title;
+  document.getElementById("milestone-desc").value = desc;
+  document.getElementById("milestone-img").value = img;
+  document.getElementById("milestone-modal").classList.remove("hidden");
+};
 
-function editMilestone(id) {
-  const milestone = milestones.find(m => m.id == id);
-  if (!milestone) return;
-
-  document.getElementById("milestone-id").value = milestone.id;
-  document.getElementById("milestone-date").value = milestone.date;
-  document.getElementById("milestone-title").value = milestone.title;
-  document.getElementById("milestone-desc").value = milestone.desc;
-  document.getElementById("milestone-img").value = milestone.img || "";
-
-  openMilestoneModal(true);
-}
-
-function deleteMilestone(id) {
-  if (confirm("Tem certeza que deseja excluir este marco?")) {
-    milestones = milestones.filter(m => m.id !== id);
-    saveMilestonesToStorage();
-  }
-}
-
-renderMilestones();
-
-// ==========================================
-// 5. NAVEGAÇÃO POR ABAS
-// ==========================================
-function switchTab(tabId, element) {
-  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
-
-  document.getElementById(`tab-${tabId}`).classList.add('active');
-  element.classList.add('active');
-}
-
-// ==========================================
-// 6. CARTAS "ABRIR QUANDO..."
-// ==========================================
-const lettersData = {
-  triste: {
-    title: "Quando estiver triste 🥺",
-    icon: "🥺",
-    text: "Lembre-se de que nenhum dia ruim dura para sempre e que eu estou sempre aqui para te ouvir e te dar o abraço mais apertado do mundo!"
-  },
-  saudade: {
-    title: "Quando estiver com saudades 💭",
-    icon: "💭",
-    text: "Feche os olhos por 5 segundos e lembre do nosso último abraço. Logo estarei ao seu lado para te encher de carinho!"
-  },
-  sorrir: {
-    title: "Quando precisar sorrir 😄",
-    icon: "😄",
-    text: "Lembre-se de quando a gente deu risada sem parar por causa daquela bobagem... Ver o seu sorriso é minha coisa favorita no mundo!"
-  },
-  bravo: {
-    title: "Quando estiver bravo comigo 🙈",
-    icon: "🙈",
-    text: "Respira fundo! Eu te amo demais e tenho certeza de que podemos resolver tudo juntos."
+window.deleteMilestone = async (id) => {
+  if (confirm("Deseja excluir este marco?")) {
+    await deleteDoc(doc(db, "milestones", id));
   }
 };
 
-function openLetter(type) {
+// ==========================================
+// 5. NAVEGAÇÃO E DEMAIS FUNÇÕES
+// ==========================================
+window.switchTab = (tabId, element) => {
+  document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+  document.getElementById(`tab-${tabId}`).classList.add('active');
+  element.classList.add('active');
+};
+
+const lettersData = {
+  triste: { title: "Quando estiver triste 🥺", icon: "🥺", text: "Nenhum dia ruim dura para sempre. Estou do seu lado sempre!" },
+  saudade: { title: "Quando estiver com saudades 💭", icon: "💭", text: "Lembre do nosso último abraço. Logo estarei aí com você!" },
+  sorrir: { title: "Quando precisar sorrir 😄", icon: "😄", text: "Lembre-se do nosso momento mais engraçado! Seu sorriso é meu motivo de alegria." },
+  bravo: { title: "Quando estiver bravo comigo 🙈", icon: "🙈", text: "Eu te amo muito! Vamos conversar e resolver juntos." }
+};
+
+window.openLetter = (type) => {
   const data = lettersData[type];
   document.getElementById("modal-icon").innerText = data.icon;
   document.getElementById("modal-title").innerText = data.title;
   document.getElementById("modal-text").innerText = data.text;
   document.getElementById("letter-modal").classList.remove("hidden");
-}
+};
 
-function closeLetter() {
-  document.getElementById("letter-modal").classList.add("hidden");
-}
+window.closeLetter = () => document.getElementById("letter-modal").classList.add("hidden");
 
-// ==========================================
-// 7. SORTEADOR DE ENCONTROS
-// ==========================================
 const dateIdeas = [
-  "🍕 Noite da Pizza Feita em Casa",
-  "🍿 Maratona do Nosso Filme/Série Favorito",
-  "🧺 Piquenique no Fim de Tarde",
-  "🍔 Ir Conhecer uma Hamburgueria Nova",
-  "🎮 Noite de Jogos e Petiscos",
-  "🍦 Sair Só Para Comer Sobremesa"
+  "🍕 Noite da Pizza Feita em Casa", "🍿 Maratona do Nosso Filme Favorito",
+  "🧺 Piquenique no Fim de Tarde", "🍔 Ir Conhecer uma Hamburgueria Nova",
+  "🎮 Noite de Jogos e Petiscos", "🍦 Sair Só Para Comer Sobremesa"
 ];
 
-function spinDate() {
+window.spinDate = () => {
   const resultElem = document.getElementById("date-result");
   let counter = 0;
-  
   const interval = setInterval(() => {
-    const randomTemp = dateIdeas[Math.floor(Math.random() * dateIdeas.length)];
-    resultElem.innerText = randomTemp;
+    resultElem.innerText = dateIdeas[Math.floor(Math.random() * dateIdeas.length)];
     counter++;
     if (counter > 12) {
       clearInterval(interval);
-      const finalChoice = dateIdeas[Math.floor(Math.random() * dateIdeas.length)];
-      resultElem.innerText = finalChoice;
+      resultElem.innerText = dateIdeas[Math.floor(Math.random() * dateIdeas.length)];
     }
   }, 100);
-}
+};
 
-// ==========================================
-// 8. QUIZ DO CASAL
-// ==========================================
+// Quiz
 const quizData = [
-  {
-    question: "Qual é a nossa atividade favorita juntos?",
-    options: ["Assistir séries no sofá", "Sair para comer", "Viajar e passear", "Ficar conversando bobagem"],
-    correct: 1
-  },
-  {
-    question: "Qual detalhe eu mais amo em você?",
-    options: ["O seu sorriso", "O seu abraço", "A sua risada", "Tudo isso junto!"],
-    correct: 3
-  }
+  { question: "Qual é a nossa atividade favorita juntos?", options: ["Assistir séries no sofá", "Sair para comer", "Viajar e passear", "Ficar conversando bobagem"], correct: 1 },
+  { question: "Qual detalhe eu mais amo em você?", options: ["O seu sorriso", "O seu abraço", "A sua risada", "Tudo isso junto!"], correct: 3 }
 ];
-
 let currentQuizIndex = 0;
-let score = 0;
 
 function renderQuiz() {
   const container = document.getElementById("quiz-container");
   if (!container) return;
-  
   if (currentQuizIndex >= quizData.length) {
-    container.innerHTML = `
-      <div style="text-align: center; padding: 20px;">
-        <span style="font-size: 3rem;">🎉</span>
-        <h3 style="margin: 12px 0;">Quiz Concluído!</h3>
-        <p style="color: var(--text-muted); font-size: 0.9rem;">Você completou o quiz do nosso relacionamento com sucesso!</p>
-      </div>
-    `;
+    container.innerHTML = `<div style="text-align: center; padding: 20px;"><span style="font-size: 3rem;">🎉</span><h3>Quiz Concluído!</h3></div>`;
     return;
   }
-
   const q = quizData[currentQuizIndex];
   document.getElementById("quiz-progress").innerText = `Pergunta ${currentQuizIndex + 1} de ${quizData.length}`;
   document.getElementById("quiz-question").innerText = q.question;
-
   const optionsDiv = document.getElementById("quiz-options");
   optionsDiv.innerHTML = "";
-
   q.options.forEach((opt, index) => {
     const btn = document.createElement("button");
     btn.className = "quiz-opt-btn";
     btn.innerText = opt;
-    btn.onclick = () => handleAnswer(index);
+    btn.onclick = () => { currentQuizIndex++; renderQuiz(); };
     optionsDiv.appendChild(btn);
   });
 }
-
-function handleAnswer(index) {
-  if (index === quizData[currentQuizIndex].correct) {
-    score++;
-  }
-  currentQuizIndex++;
-  renderQuiz();
-}
-
 renderQuiz();
