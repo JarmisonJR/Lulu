@@ -42,7 +42,7 @@
       </div>
 
       <div class="timeline" id="timeline-list">
-        <!-- Os marcos serão renderizados dinamicamente pelo JavaScript -->
+        <!-- Renderizado dinamicamente -->
       </div>
     </section>
 
@@ -55,7 +55,7 @@
       <p class="subtitle">Nossos melhores momentos eternizados em fotos.</p>
 
       <div class="photo-grid" id="photo-grid">
-        <!-- As fotos serão renderizadas dinamicamente pelo JavaScript -->
+        <!-- Renderizado dinamicamente -->
       </div>
     </section>
 
@@ -66,7 +66,7 @@
           <h2>Carta Para Você 💌</h2>
           <button class="btn-add" onclick="openCustomLetterModal()">✏️ Escrever / Editar</button>
         </div>
-        <p id="custom-letter-preview" class="letter-preview-text">Clique acima para escrever uma carta especial que ele poderá ler aqui!</p>
+        <p id="custom-letter-preview" class="letter-preview-text">Carregando carta do Firebase...</p>
       </div>
 
       <h2 class="section-title margin-top-lg">Abrir Quando... ✉️</h2>
@@ -119,7 +119,7 @@
 
   </main>
 
-  <!-- Modal para Visualização da Foto Expandida (Zoom) -->
+  <!-- Modais -->
   <div id="view-photo-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeViewPhotoModal()"></div>
     <div class="modal-card">
@@ -131,7 +131,6 @@
     </div>
   </div>
 
-  <!-- Modal para Adicionar Nova Foto -->
   <div id="add-photo-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closePhotoModal()"></div>
     <div class="modal-card">
@@ -139,8 +138,8 @@
       <div class="modal-body align-left">
         <h3>Nova Foto para o Mural 🖼️</h3>
         <form onsubmit="savePhoto(event)">
-          <label for="photo-url">URL da Foto / Caminho do Arquivo:</label>
-          <input type="text" id="photo-url" placeholder="Ex: assets/foto1.jpg ou https://..." required>
+          <label for="photo-url">URL da Foto / Imagem:</label>
+          <input type="text" id="photo-url" placeholder="https://..." required>
 
           <label for="photo-caption">Legenda (Opcional):</label>
           <input type="text" id="photo-caption" placeholder="Ex: Nosso primeiro café juntos ❤️">
@@ -151,7 +150,6 @@
     </div>
   </div>
 
-  <!-- Modal para as Cartas Genéricas -->
   <div id="letter-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeLetter()"></div>
     <div class="modal-card">
@@ -164,7 +162,6 @@
     </div>
   </div>
 
-  <!-- Modal para Escrever/Editar Carta Personalizada -->
   <div id="custom-letter-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeCustomLetterModal()"></div>
     <div class="modal-card">
@@ -180,7 +177,6 @@
     </div>
   </div>
 
-  <!-- Modal para Ajustar Data Inicial do Relacionamento -->
   <div id="date-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeDateModal()"></div>
     <div class="modal-card">
@@ -196,7 +192,6 @@
     </div>
   </div>
 
-  <!-- Modal para Criar/Editar Marco -->
   <div id="milestone-modal" class="modal hidden">
     <div class="modal-overlay" onclick="closeMilestoneModal()"></div>
     <div class="modal-card">
@@ -216,7 +211,7 @@
           <textarea id="milestone-desc" rows="3" placeholder="Escreva sobre esse dia..." required></textarea>
           
           <label for="milestone-img">URL da Imagem / Foto (Opcional)</label>
-          <input type="text" id="milestone-img" placeholder="Ex: assets/foto.jpg ou https://...">
+          <input type="text" id="milestone-img" placeholder="https://...">
 
           <button type="submit" class="btn-primary margin-top">Salvar Marco ✨</button>
         </form>
@@ -224,7 +219,7 @@
     </div>
   </div>
 
-  <!-- Navegação Inferior (Estilo App Nativo) -->
+  <!-- Navegação Inferior -->
   <nav class="bottom-nav">
     <button class="nav-item active" onclick="switchTab('timeline', this)">
       <span class="nav-icon">📖</span>
@@ -248,6 +243,7 @@
     </button>
   </nav>
 
-  <script src="script.js"></script>
+  <!-- MÓDULO SCRIPT COM FIREBASE INTEGRADO -->
+  <script type="module" src="script.js"></script>
 </body>
 </html>
