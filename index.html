@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nosso Espaço ❤️</title>
+  <link rel="stylesheet" href="style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- Header Fixo com Cronômetro Em Tempo Real -->
+  <header class="app-header">
+    <div class="header-top">
+      <span class="badge">Nossa História</span>
+      <button class="btn-icon-sm" onclick="openDateModal()" title="Ajustar Data Inicial">⚙️ Ajustar Data</button>
+    </div>
+    <h1>Juntos há</h1>
+    <div id="counter" class="counter-card">
+      <div class="time-block"><span id="days">0</span><small>Dias</small></div>
+      <div class="time-block"><span id="hours">00</span><small>Horas</small></div>
+      <div class="time-block"><span id="minutes">00</span><small>Min</small></div>
+      <div class="time-block"><span id="seconds">00</span><small>Seg</small></div>
+    </div>
+  </header>
+
+  <!-- Conteúdo Principal Dinâmico -->
+  <main class="content">
+
+    <!-- ABA 1: Linha do Tempo & Recado do Dia -->
+    <section id="tab-timeline" class="tab-content active">
+      <div class="card note-card">
+        <h3>💌 Bilhete do Dia</h3>
+        <p id="daily-note">"Você é a minha pessoa favorita no mundo inteiro. Obrigado por existir ao meu lado!"</p>
+      </div>
+
+      <div class="section-header">
+        <h2 class="section-title">Nossos Marcos 📸</h2>
+        <button class="btn-add" onclick="openMilestoneModal()">+ Novo Marco</button>
+      </div>
+
+      <div class="timeline" id="timeline-list">
+        <!-- Os marcos serão renderizados dinamicamente pelo JavaScript -->
+      </div>
+    </section>
+
+    <!-- ABA 2: Mural de Fotos -->
+    <section id="tab-gallery" class="tab-content">
+      <div class="section-header">
+        <h2 class="section-title">Mural de Fotos 🖼️</h2>
+        <button class="btn-add" onclick="openPhotoModal()">+ Adicionar Foto</button>
+      </div>
+      <p class="subtitle">Nossos melhores momentos eternizados em fotos.</p>
+
+      <div class="photo-grid" id="photo-grid">
+        <!-- As fotos serão renderizadas dinamicamente pelo JavaScript -->
+      </div>
+    </section>
+
+    <!-- ABA 3: Cartas & Minha Carta Especial -->
+    <section id="tab-letters" class="tab-content">
+      <div class="card special-letter-card">
+        <div class="special-letter-header">
+          <h2>Carta Para Você 💌</h2>
+          <button class="btn-add" onclick="openCustomLetterModal()">✏️ Escrever / Editar</button>
+        </div>
+        <p id="custom-letter-preview" class="letter-preview-text">Clique acima para escrever uma carta especial que ele poderá ler aqui!</p>
+      </div>
+
+      <h2 class="section-title margin-top-lg">Abrir Quando... ✉️</h2>
+      <p class="subtitle">Clique em um envelope para ler quando precisar de um carinho especial.</p>
+      
+      <div class="letters-grid">
+        <button class="letter-btn" onclick="openLetter('triste')">
+          <span class="icon">🥺</span>
+          <span>Estiver triste</span>
+        </button>
+        <button class="letter-btn" onclick="openLetter('saudade')">
+          <span class="icon">💭</span>
+          <span>Com saudades</span>
+        </button>
+        <button class="letter-btn" onclick="openLetter('sorrir')">
+          <span class="icon">😄</span>
+          <span>Precisar sorrir</span>
+        </button>
+        <button class="letter-btn" onclick="openLetter('bravo')">
+          <span class="icon">🙈</span>
+          <span>Bravo comigo</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ABA 4: Sorteador de Encontros -->
+    <section id="tab-dates" class="tab-content">
+      <h2 class="section-title">Sorteador de Encontros 🎲</h2>
+      <div class="card date-generator">
+        <div class="roulette-box">
+          <p id="date-result">O que vamos fazer hoje?</p>
+        </div>
+        <button class="btn-primary" onclick="spinDate()">Girar Sorteio 🎯</button>
+      </div>
+    </section>
+
+    <!-- ABA 5: Quiz do Casal -->
+    <section id="tab-quiz" class="tab-content">
+      <h2 class="section-title">Quiz do Casal 🧠</h2>
+      <div class="card quiz-card">
+        <div id="quiz-container">
+          <div class="quiz-header">
+            <span id="quiz-progress">Pergunta 1 de 2</span>
+          </div>
+          <h3 id="quiz-question">Carregando pergunta...</h3>
+          <div id="quiz-options" class="options-container"></div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Modal para Visualização da Foto Expandida (Zoom) -->
+  <div id="view-photo-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeViewPhotoModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeViewPhotoModal()">&times;</button>
+      <div class="modal-body">
+        <img id="view-photo-img" src="" class="photo-view-full" alt="Foto">
+        <p id="view-photo-caption" class="photo-caption-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Adicionar Nova Foto -->
+  <div id="add-photo-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closePhotoModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closePhotoModal()">&times;</button>
+      <div class="modal-body align-left">
+        <h3>Nova Foto para o Mural 🖼️</h3>
+        <form onsubmit="savePhoto(event)">
+          <label for="photo-url">URL da Foto / Caminho do Arquivo:</label>
+          <input type="text" id="photo-url" placeholder="Ex: assets/foto1.jpg ou https://..." required>
+
+          <label for="photo-caption">Legenda (Opcional):</label>
+          <input type="text" id="photo-caption" placeholder="Ex: Nosso primeiro café juntos ❤️">
+
+          <button type="submit" class="btn-primary margin-top">Adicionar ao Mural ✨</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para as Cartas Genéricas -->
+  <div id="letter-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeLetter()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeLetter()">&times;</button>
+      <div class="modal-body">
+        <span id="modal-icon" class="modal-icon">✉️</span>
+        <h3 id="modal-title">Sua Carta</h3>
+        <p id="modal-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Escrever/Editar Carta Personalizada -->
+  <div id="custom-letter-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeCustomLetterModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeCustomLetterModal()">&times;</button>
+      <div class="modal-body align-left">
+        <h3>Escrever Carta Especial ✍️</h3>
+        <form onsubmit="saveCustomLetter(event)">
+          <label for="custom-letter-input">Sua Carta:</label>
+          <textarea id="custom-letter-input" rows="8" placeholder="Escreva aqui tudo o que você sente por ele..." required></textarea>
+          <button type="submit" class="btn-primary margin-top">Salvar Carta 💌</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Ajustar Data Inicial do Relacionamento -->
+  <div id="date-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeDateModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeDateModal()">&times;</button>
+      <div class="modal-body align-left">
+        <h3>Data do Início do Namoro 🗓️</h3>
+        <form onsubmit="saveStartDate(event)">
+          <label for="start-date-input">Selecione a data e hora do início:</label>
+          <input type="datetime-local" id="start-date-input" required>
+          <button type="submit" class="btn-primary margin-top">Salvar Data ⏳</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Criar/Editar Marco -->
+  <div id="milestone-modal" class="modal hidden">
+    <div class="modal-overlay" onclick="closeMilestoneModal()"></div>
+    <div class="modal-card">
+      <button class="modal-close" onclick="closeMilestoneModal()">&times;</button>
+      <div class="modal-body align-left">
+        <h3 id="milestone-modal-title">Novo Marco</h3>
+        <form id="milestone-form" onsubmit="saveMilestone(event)">
+          <input type="hidden" id="milestone-id">
+          
+          <label for="milestone-date">Data</label>
+          <input type="text" id="milestone-date" placeholder="Ex: 15 Jan 2024 ou Hoje" required>
+          
+          <label for="milestone-title">Título</label>
+          <input type="text" id="milestone-title" placeholder="Ex: Nossa Primeira Viagem" required>
+          
+          <label for="milestone-desc">Descrição</label>
+          <textarea id="milestone-desc" rows="3" placeholder="Escreva sobre esse dia..." required></textarea>
+          
+          <label for="milestone-img">URL da Imagem / Foto (Opcional)</label>
+          <input type="text" id="milestone-img" placeholder="Ex: assets/foto.jpg ou https://...">
+
+          <button type="submit" class="btn-primary margin-top">Salvar Marco ✨</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navegação Inferior (Estilo App Nativo) -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('timeline', this)">
+      <span class="nav-icon">📖</span>
+      <span class="nav-label">História</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('gallery', this)">
+      <span class="nav-icon">🖼️</span>
+      <span class="nav-label">Mural</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('letters', this)">
+      <span class="nav-icon">✉️</span>
+      <span class="nav-label">Cartas</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('dates', this)">
+      <span class="nav-icon">🎲</span>
+      <span class="nav-label">Encontros</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('quiz', this)">
+      <span class="nav-icon">🧩</span>
+      <span class="nav-label">Quiz</span>
+    </button>
+  </nav>
+
+  <script src="script.js"></script>
+</body>
+</html>
